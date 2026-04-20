@@ -6,6 +6,31 @@ All notable changes to `memex-md` are documented here. This project follows [Sem
 
 Nothing yet.
 
+## [0.4.0] — 2026-04-20
+
+The "never miss a moment" release. Turns knowledge capture from a discipline problem into a reflex.
+
+### Added
+
+- **Stop hook for auto-drafting** — new `--auto` flag on `init` registers a Claude Code `Stop` hook that fires at the end of every response. The hook invokes `memex-md draft --working --auto` which:
+  - Reads the working tree diff silently.
+  - Asks Claude (`claude -p`) whether any knowledge entries are warranted.
+  - If Claude returns `NO_ENTRIES_NEEDED`: silent no-op.
+  - If Claude proposes entries: writes them to `.claude/knowledge/<scope>.md` and prints one stderr line — *"wrote N entries — review with `git diff .claude/knowledge/`"*.
+  - Never aborts the Stop hook chain: all failures (missing binary, git errors, Claude timeout) degrade to silent returns.
+  - You review entries via `git diff` and commit or `git checkout --` to discard.
+- **`--auto` flag on `draft`** — makes draft non-fatal, non-interactive, and silent on no-op. Implies `--write`. Designed for hook use but usable standalone.
+
+### Usage
+
+Enable Stop-hook auto-draft on a new or existing repo:
+
+\`\`\`
+npx memex-md init --auto --force
+\`\`\`
+
+Disable later by removing the `Stop` entry from `.claude/settings.json`.
+
 ## [0.3.2] — 2026-04-20
 
 ### Fixed
@@ -70,7 +95,8 @@ The "team discipline" release. Project was renamed from `claude-memex` to `memex
 - Scaffolded `.claude/knowledge/` + `knowledge-update` skill + post-edit hook.
 - Zero runtime dependencies.
 
-[Unreleased]: https://github.com/dexonapi-alt/memex-md/compare/v0.3.2...HEAD
+[Unreleased]: https://github.com/dexonapi-alt/memex-md/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/dexonapi-alt/memex-md/releases/tag/v0.4.0
 [0.3.2]: https://github.com/dexonapi-alt/memex-md/releases/tag/v0.3.2
 [0.3.1]: https://github.com/dexonapi-alt/memex-md/releases/tag/v0.3.1
 [0.3.0]: https://github.com/dexonapi-alt/memex-md/releases/tag/v0.3.0

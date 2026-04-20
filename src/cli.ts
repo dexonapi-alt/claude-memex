@@ -11,7 +11,7 @@ import { check } from "./commands/check";
 import { graph } from "./commands/graph";
 import { promote } from "./commands/promote";
 
-const VERSION = "0.3.2";
+const VERSION = "0.4.0";
 
 const HELP = `memex-md ${VERSION} — in-repo knowledge base for Claude Code
 
@@ -19,7 +19,11 @@ Usage:
   memex-md <command> [args]
 
 Core commands:
-  init [--force]                   Scaffold .claude/knowledge/ + skill + hooks
+  init [--force] [--auto]          Scaffold .claude/knowledge/ + skill + hooks
+                                   --auto also registers a Stop hook that runs
+                                   \`draft --working --auto\` after every
+                                   Claude response (Claude decides if entries
+                                   are warranted; writes silently on approval)
   add <scope> "<title>"            Append a new entry to a scope
   list [scope]                     List entries (optionally one scope)
   search <query>                   Grep across all knowledge files
@@ -27,8 +31,10 @@ Core commands:
   prune [--days N]                 Flag entries untouched for N days (default 180)
 
 Claude-powered commands:
-  draft [--staged|--working|--commit <sha>] [--write]
-                                   Propose knowledge entries from a git diff
+  draft [--staged|--working|--commit <sha>] [--write] [--auto]
+                                   Propose knowledge entries from a git diff.
+                                   --auto: silent no-op mode for Stop hook
+                                   (implies --write; never aborts)
   ask [--scope <s,s>] "<question>" Answer a question using the knowledge base
                                    (--scope narrows which files are loaded:
                                    architecture, decisions, patterns, gotchas,

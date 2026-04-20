@@ -19,6 +19,7 @@ interface Settings {
   hooks?: {
     PostToolUse?: HookEntry[];
     SessionStart?: HookEntry[];
+    Stop?: HookEntry[];
     [k: string]: unknown;
   };
   [k: string]: unknown;
@@ -32,6 +33,9 @@ const POST_EDIT_COMMAND =
   ": consider updating .claude/knowledge/ if this change introduces a decision, pattern, or gotcha.')\"";
 
 const SESSION_START_COMMAND = "npx --no-install memex-md stale --brief";
+
+const STOP_HOOK_COMMAND =
+  "npx --no-install memex-md draft --working --auto";
 
 const CLAUDE_MD_START = "<!-- memex-md:start -->";
 const CLAUDE_MD_END = "<!-- memex-md:end -->";
@@ -130,6 +134,7 @@ function installClaudeMd(
 
 export async function init(args: string[]): Promise<void> {
   const force = args.includes("--force");
+  const auto = args.includes("--auto");
 
   fs.mkdirSync(claudeDir(), { recursive: true });
 
@@ -155,7 +160,7 @@ export async function init(args: string[]): Promise<void> {
   const prTemplateInstalled = installPrTemplate(templates, force);
   const claudeMdStatus = installClaudeMd(force);
 
-  mergeHooks();
+  mergeHooks(auto);
 
   const claudeMdLabel = {
     created: "created",
@@ -177,6 +182,9 @@ export async function init(args: string[]): Promise<void> {
   console.log("  .claude/settings.json             hooks registered:");
   console.log("    - PostToolUse  (knowledge-update reminder)");
   console.log("    - SessionStart (stale-entry flag)");
+  if (auto) {
+    console.log("    - Stop         (auto-draft on every response)");
+  }
   console.log("");
   console.log("Next:");
   console.log("  1. git add .claude/ .github/ CLAUDE.md && commit");
@@ -185,6 +193,11 @@ export async function init(args: string[]): Promise<void> {
   if (hookInstalled) {
     console.log(
       "  4. (Optional) Activate the pre-commit hook: git config core.hooksPath .claude/hooks"
+    );
+  }
+  if (!auto) {
+    console.log(
+      "  5. (Optional) Enable auto-draft on every Claude turn: re-run with --auto --force"
     );
   }
 }
@@ -218,7 +231,7 @@ function installPrTemplate(templates: string, force: boolean): boolean {
   return true;
 }
 
-function mergeHooks(): void {
+function mergeHooks(auto: boolean): void {
   const p = settingsPath();
   const existing = readJson<Settings>(p) ?? {};
   existing.hooks ??= {};
@@ -244,6 +257,19 @@ function mergeHooks(): void {
     existing.hooks.SessionStart.push({
       hooks: [{ type: "command", command: SESSION_START_COMMAND }],
     });
+  }
+
+  if (auto) {
+    existing.hooks.Stop ??= [];
+    if (
+      !existing.hooks.Stop.some((h) =>
+        JSON.stringify(h).includes("memex-md draft")
+      )
+    ) {
+      existing.hooks.Stop.push({
+        hooks: [{ type: "command", command: STOP_HOOK_COMMAND }],
+      });
+    }
   }
 
   writeJson(p, existing);

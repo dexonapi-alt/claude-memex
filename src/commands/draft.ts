@@ -107,8 +107,20 @@ function applyEntries(entries: Parsed[]): void {
 }
 
 export async function draft(args: string[]): Promise<void> {
+  // --auto: non-fatal, non-interactive, silent on no-op. Used by the
+  // Stop hook so failures never break the Claude Code session loop.
+  // Implies --write.
+  const auto = args.includes("--auto");
+  const write = args.includes("--write") || auto;
+
+  const softExit = (code = 0) => {
+    if (auto) return; // Stop hook — always exit 0, never abort the loop.
+    process.exit(code);
+  };
+
   requireKnowledgeBase();
   if (!isGitRepo()) {
+    if (auto) return;
     console.error("Not inside a git repository.");
     process.exit(1);
   }
@@ -128,11 +140,13 @@ export async function draft(args: string[]): Promise<void> {
       }
     }
   } catch (err) {
+    if (auto) return; // Silent — no baseline commit, no previous commit, etc.
     console.error(err instanceof Error ? err.message : err);
     process.exit(1);
   }
 
   if (!diff.trim()) {
+    if (auto) return;
     console.log("No diff found. Use --staged, --working, or --commit <sha>.");
     return;
   }
@@ -140,25 +154,36 @@ export async function draft(args: string[]): Promise<void> {
   const indexMd = readIndex();
   const prompt = buildPrompt(truncate(diff, MAX_DIFF_CHARS), indexMd);
 
-  console.error("[memex-md] drafting entries with claude -p ...");
-  console.error("");
+  if (!auto) {
+    console.error("[memex-md] drafting entries with claude -p ...");
+    console.error("");
+  }
 
   let output: string;
   try {
-    output = await runClaudePrompt(prompt);
+    output = await runClaudePrompt(prompt, { stream: !auto });
   } catch (err) {
+    if (auto) {
+      // Quiet failure in auto mode — don't spam stderr on each turn.
+      return;
+    }
     console.error(err instanceof Error ? err.message : err);
     process.exit(1);
   }
 
-  console.error("");
+  if (!auto) console.error("");
   if (/^\s*NO_ENTRIES_NEEDED\s*$/m.test(output)) {
+    if (auto) {
+      // Silent: nothing worth capturing this turn.
+      return;
+    }
     console.error("[memex-md] No entries warranted for this diff.");
     return;
   }
 
   const parsed = parseEntries(output);
   if (parsed.length === 0) {
+    if (auto) return;
     console.error(
       "[memex-md] Claude did not emit any <SCOPE:...> entries. " +
         "Output was printed above; review and add manually if useful."
@@ -166,13 +191,23 @@ export async function draft(args: string[]): Promise<void> {
     return;
   }
 
-  if (args.includes("--write")) {
-    console.error(`[memex-md] Writing ${parsed.length} entries:`);
-    applyEntries(parsed);
+  if (write) {
+    if (auto) {
+      applyEntries(parsed);
+      console.error(
+        `[memex-md] stop-hook: wrote ${parsed.length} entr${
+          parsed.length === 1 ? "y" : "ies"
+        } to .claude/knowledge/ — review with \`git diff .claude/knowledge/\``
+      );
+    } else {
+      console.error(`[memex-md] Writing ${parsed.length} entries:`);
+      applyEntries(parsed);
+    }
   } else {
     console.error(
       `[memex-md] ${parsed.length} entries proposed above. ` +
         `Re-run with --write to append them to the knowledge base.`
     );
   }
+  softExit(0);
 }

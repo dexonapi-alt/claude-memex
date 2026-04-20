@@ -82,7 +82,7 @@ Open `.claude/knowledge/decisions.md`, fill in the details, and commit. Next tim
 
 | Command | What it does |
 |---|---|
-| `memex-md init` | Set up `.claude/knowledge/`, the skill, and the hooks |
+| `memex-md init [--auto]` | Set up `.claude/knowledge/`, skill, hooks, CLAUDE.md. `--auto` also registers a Stop hook for auto-drafting after each Claude response |
 | `memex-md add <scope> "<title>"` | Append a new entry to a scope |
 | `memex-md list [scope]` | Show what's in your knowledge base |
 | `memex-md search <query>` | Grep across all entries |
@@ -146,6 +146,18 @@ npx memex-md check --base origin/main...HEAD --strict
 npx memex-md check --staged
 ```
 Fails the check when someone lands a migration / auth / schema / config change without updating the knowledge base. Pattern list is overridable via `--patterns`. Exits `1` when `--strict` is set or when `CI=true`.
+
+### Stop hook — auto-draft after every Claude response (opt-in via `--auto`)
+
+Run `memex-md init --auto` (or `--auto --force` on an existing install) to register a `Stop` hook in `.claude/settings.json`. At the end of every Claude response, the hook runs `memex-md draft --working --auto`, which:
+
+1. Reads the uncommitted working diff (silently — no noise if empty).
+2. Asks Claude (`claude -p`) whether any knowledge entries are warranted.
+3. If Claude returns `NO_ENTRIES_NEEDED`: silent no-op.
+4. If Claude proposes entries: writes them to `.claude/knowledge/<scope>.md` and prints one stderr line: *"wrote N entries — review with `git diff .claude/knowledge/`"*.
+5. **Never aborts the hook chain**: missing `claude` binary, git errors, timeouts all degrade to silent returns so the Claude Code session loop is never broken.
+
+You review entries via `git diff .claude/knowledge/` and `git commit` (accept) or `git checkout --` (discard). Turn off by removing the `Stop` entry from `.claude/settings.json`.
 
 ### Pre-commit hook + PR template (installed by `init`)
 `init` also scaffolds:

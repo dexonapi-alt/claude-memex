@@ -10,7 +10,7 @@ import { stale } from "./commands/stale";
 import { check } from "./commands/check";
 import { graph } from "./commands/graph";
 
-const VERSION = "0.3.0";
+const VERSION = "0.3.1";
 
 const HELP = `memex-md ${VERSION} — in-repo knowledge base for Claude Code
 

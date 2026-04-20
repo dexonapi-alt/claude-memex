@@ -51,9 +51,11 @@ That creates:
   skills/
     knowledge-update/   ← tells Claude when to update the above
   settings.json         ← a gentle reminder hook after edits
+CLAUDE.md               ← auto-bootstrapped with a block that points
+                          Claude at .claude/knowledge/ every session
 ```
 
-Commit the folder. Claude reads it every session. That's it.
+Commit the folder and `CLAUDE.md`. Claude reads the knowledge base every session.
 
 <!-- 📸 DEMO GIF: terminal recording of `init` + a session using the knowledge. Drop at ./docs/demo.gif -->
 <!-- ![demo](./docs/demo.gif) -->

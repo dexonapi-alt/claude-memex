@@ -33,6 +33,70 @@ const POST_EDIT_COMMAND =
 
 const SESSION_START_COMMAND = "npx --no-install memex-md stale --brief";
 
+const CLAUDE_MD_START = "<!-- memex-md:start -->";
+const CLAUDE_MD_END = "<!-- memex-md:end -->";
+
+const CLAUDE_MD_BLOCK = `${CLAUDE_MD_START}
+## Project knowledge base (memex-md)
+
+This repo uses [memex-md](https://github.com/dexonapi-alt/memex-md) to persist
+project knowledge in git. Before answering questions or making non-trivial
+changes, consult \`.claude/knowledge/\`:
+
+- \`architecture.md\` — system shape, services, data flow
+- \`decisions.md\` — non-obvious choices and their rationale
+- \`patterns.md\` — reusable code patterns in this codebase
+- \`gotchas.md\` — past bugs and non-obvious constraints
+- \`glossary.md\` — project-specific terminology
+
+When work reveals a new decision, pattern, or gotcha, record it:
+
+\`\`\`
+npx memex-md add <scope> "<title>"
+\`\`\`
+
+Or let Claude draft entries from a diff:
+
+\`\`\`
+npx memex-md draft --staged --write
+\`\`\`
+
+See \`.claude/skills/knowledge-update/SKILL.md\` for full triggers and conventions.
+${CLAUDE_MD_END}`;
+
+function escapeRegex(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function installClaudeMd(
+  force: boolean
+): "created" | "appended" | "updated" | "present" {
+  const p = path.join(repoRoot(), "CLAUDE.md");
+
+  if (!fs.existsSync(p)) {
+    fs.writeFileSync(p, `# ${path.basename(repoRoot())}\n\n${CLAUDE_MD_BLOCK}\n`);
+    return "created";
+  }
+
+  const current = fs.readFileSync(p, "utf8");
+  const hasBlock =
+    current.includes(CLAUDE_MD_START) && current.includes(CLAUDE_MD_END);
+
+  if (hasBlock && !force) return "present";
+
+  if (hasBlock && force) {
+    const pattern = new RegExp(
+      `${escapeRegex(CLAUDE_MD_START)}[\\s\\S]*?${escapeRegex(CLAUDE_MD_END)}`
+    );
+    fs.writeFileSync(p, current.replace(pattern, CLAUDE_MD_BLOCK));
+    return "updated";
+  }
+
+  const separator = current.endsWith("\n") ? "\n" : "\n\n";
+  fs.writeFileSync(p, current + separator + CLAUDE_MD_BLOCK + "\n");
+  return "appended";
+}
+
 export async function init(args: string[]): Promise<void> {
   const force = args.includes("--force");
 
@@ -58,8 +122,16 @@ export async function init(args: string[]): Promise<void> {
 
   const hookInstalled = installPreCommitHook(templates, force);
   const prTemplateInstalled = installPrTemplate(templates, force);
+  const claudeMdStatus = installClaudeMd(force);
 
   mergeHooks();
+
+  const claudeMdLabel = {
+    created: "created",
+    appended: "appended block",
+    updated: "updated block (--force)",
+    present: "already has block (skipped)",
+  }[claudeMdStatus];
 
   console.log("Initialized memex-md:");
   console.log("  .claude/knowledge/                scaffolded");
@@ -70,12 +142,13 @@ export async function init(args: string[]): Promise<void> {
   console.log(
     `  .github/PULL_REQUEST_TEMPLATE.md  ${prTemplateInstalled ? "installed" : "skipped (exists)"}`
   );
+  console.log(`  CLAUDE.md                         ${claudeMdLabel}`);
   console.log("  .claude/settings.json             hooks registered:");
   console.log("    - PostToolUse  (knowledge-update reminder)");
   console.log("    - SessionStart (stale-entry flag)");
   console.log("");
   console.log("Next:");
-  console.log("  1. git add .claude/ .github/ && commit");
+  console.log("  1. git add .claude/ .github/ CLAUDE.md && commit");
   console.log("  2. Edit .claude/knowledge/INDEX.md to taste");
   console.log('  3. Try: memex-md add decisions "your first decision"');
   if (hookInstalled) {

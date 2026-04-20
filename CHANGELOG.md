@@ -6,6 +6,16 @@ All notable changes to `memex-md` are documented here. This project follows [Sem
 
 Nothing yet.
 
+## [0.3.1] — 2026-04-20
+
+### Fixed
+
+- **`init` now bootstraps `CLAUDE.md`** — previously the knowledge base was invisible to Claude at session start because Claude Code only auto-loads `CLAUDE.md`, not arbitrary files under `.claude/knowledge/`. `init` now creates or appends a fenced block (between `<!-- memex-md:start -->` and `<!-- memex-md:end -->`) in the repo's `CLAUDE.md` that points Claude at the knowledge base and documents the update workflow. The block is idempotent — re-running `init` won't duplicate it. `--force` replaces the block in place when its content drifts.
+
+### Added
+
+- 4 new tests (`test/claude-md.test.js`) covering all four bootstrap paths: create, append to existing, idempotent re-run, `--force` block replacement.
+
 ## [0.3.0] — 2026-04-20
 
 The "team discipline" release. Project was renamed from `claude-memex` to `memex-md` (the `claude-memex` npm name was already taken by an unrelated MCP-based memory tool).
@@ -47,7 +57,8 @@ The "team discipline" release. Project was renamed from `claude-memex` to `memex
 - Scaffolded `.claude/knowledge/` + `knowledge-update` skill + post-edit hook.
 - Zero runtime dependencies.
 
-[Unreleased]: https://github.com/dexonapi-alt/memex-md/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/dexonapi-alt/memex-md/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/dexonapi-alt/memex-md/releases/tag/v0.3.1
 [0.3.0]: https://github.com/dexonapi-alt/memex-md/releases/tag/v0.3.0
 [0.2.0]: https://github.com/dexonapi-alt/memex-md/releases/tag/v0.2.0
 [0.1.0]: https://github.com/dexonapi-alt/memex-md/releases/tag/v0.1.0

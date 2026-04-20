@@ -2,13 +2,36 @@
 
 > **Give Claude Code a memory that lives in your repo — not your home folder.**
 
-<!-- 📸 BANNER: drop a 1200x400 image at ./docs/banner.png and uncomment the line below -->
-<!-- ![claude-memex banner](./docs/banner.png) -->
+### 🌍 Works with any codebase
 
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](#-license)
-[![Node](https://img.shields.io/badge/node-%3E%3D18-brightgreen.svg)](#-requirements)
-[![Claude Code](https://img.shields.io/badge/Claude%20Code-compatible-orange.svg)](https://claude.com/claude-code)
-<!-- [![npm version](https://img.shields.io/npm/v/claude-memex.svg)](https://www.npmjs.com/package/claude-memex) — uncomment after publishing -->
+![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=flat-square&logo=javascript&logoColor=black)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3776AB?style=flat-square&logo=python&logoColor=white)
+![Go](https://img.shields.io/badge/Go-00ADD8?style=flat-square&logo=go&logoColor=white)
+![Rust](https://img.shields.io/badge/Rust-000000?style=flat-square&logo=rust&logoColor=white)
+![Java](https://img.shields.io/badge/Java-ED8B00?style=flat-square&logo=openjdk&logoColor=white)
+![C#](https://img.shields.io/badge/C%23-239120?style=flat-square&logo=dotnet&logoColor=white)
+![Ruby](https://img.shields.io/badge/Ruby-CC342D?style=flat-square&logo=ruby&logoColor=white)
+![PHP](https://img.shields.io/badge/PHP-777BB4?style=flat-square&logo=php&logoColor=white)
+![Swift](https://img.shields.io/badge/Swift-FA7343?style=flat-square&logo=swift&logoColor=white)
+![Kotlin](https://img.shields.io/badge/Kotlin-7F52FF?style=flat-square&logo=kotlin&logoColor=white)
+
+<sub>`claude-memex` is language-agnostic. It stores Markdown in your repo, so it works with any codebase — the list above is just a sample.</sub>
+
+<p align="center">
+  <img src="./assets/claude-memex-banner.png" alt="claude-memex — your knowledge has been retained. Now Claude Code already knows it next time." />
+</p>
+
+### 🛠 Tech stack
+
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)
+![Node.js](https://img.shields.io/badge/Node.js-%E2%89%A518-339933?style=flat-square&logo=node.js&logoColor=white)
+![Markdown](https://img.shields.io/badge/Markdown-storage-000000?style=flat-square&logo=markdown&logoColor=white)
+![Claude Code](https://img.shields.io/badge/Claude%20Code-integration-D97757?style=flat-square&logo=anthropic&logoColor=white)
+![Git](https://img.shields.io/badge/Git-in--repo-F05032?style=flat-square&logo=git&logoColor=white)
+![npm](https://img.shields.io/badge/npm-package-CB3837?style=flat-square&logo=npm&logoColor=white)
+![License: MIT](https://img.shields.io/badge/license-MIT-blue?style=flat-square)
+<!-- ![npm version](https://img.shields.io/npm/v/claude-memex?style=flat-square) — uncomment after publishing -->
 
 ---
 

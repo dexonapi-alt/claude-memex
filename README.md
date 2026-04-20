@@ -99,6 +99,7 @@ Open `.claude/knowledge/decisions.md`, fill in the details, and commit. Next tim
 |---|---|
 | `claude-memex stale [--days N] [--brief]` | List stale entries (powers the SessionStart hook) |
 | `claude-memex check [--base <ref>\|--staged] [--patterns <glob,glob>] [--strict]` | CI / pre-commit check: fail if sensitive files changed without a knowledge update |
+| `claude-memex graph [--mermaid]` | Show supersedes/related relationships between entries |
 
 ## 🤖 Automation, explained
 
@@ -152,6 +153,23 @@ Fails the check when someone lands a migration / auth / schema / config change w
 - `.github/PULL_REQUEST_TEMPLATE.md` — a checklist prompting contributors to record decisions / patterns / gotchas introduced by the PR (or explicitly mark N/A). GitHub auto-applies it to new PRs.
 
 Both are regular files in your repo — review and customise them like any other template.
+
+### `graph` — supersedes & related links between entries
+Entries can reference each other with two optional bullets:
+
+```md
+## Moved to Postgres for local dev
+
+- **Added:** 2026-07-15
+- **Supersedes:** `chose-sqlite-over-postgres-for-local-dev`
+- **Related:** `dev-environment-parity`
+- Migration scripts require Postgres features. Local SQLite is no longer worth
+  the parity gap.
+```
+
+`claude-memex graph` walks those links and prints an ASCII view of the chains — who supersedes whom, who relates to whom, and any dangling references (ids that don't resolve). Pass `--mermaid` to emit a `graph TD` block you can paste into a GitHub Markdown comment and have it render.
+
+This gives you a lightweight intelligence layer without pulling in a graph DB: plain Markdown conventions, walked at query time.
 
 ## 🗂 Scopes
 

@@ -10,5 +10,11 @@ Format for each entry:
 - **Decision:** what we picked
 - **Why:** the rationale (this is the load-bearing part)
 - **Trade-offs:** what we lose
+- **Supersedes:** `<old-entry-id>` (optional — when this replaces an earlier decision)
+- **Related:** `<entry-id>, <entry-id>` (optional — cross-references)
+
+When an entry is superseded, keep the original in place and add a new entry
+pointing at it with `**Supersedes:**`. Use `claude-memex graph` to see the
+chains.
 
 <!-- Append entries below. Each starts with `## <title>`. -->

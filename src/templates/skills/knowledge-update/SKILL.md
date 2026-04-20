@@ -50,6 +50,16 @@ This appends a skeleton entry with today's date. Then edit the entry inline.
 
 Append a `## <title>` block to the relevant file. Each entry should include `- **Added:** YYYY-MM-DD` so `claude-memex prune` can flag stale entries later.
 
+## Linking entries
+
+When a new decision replaces an older one (e.g. we moved from SQLite to Postgres in prod), add to the new entry:
+
+    - **Supersedes:** `<old-entry-id>`
+
+Keep the old entry in place — history matters. Use `claude-memex graph` to see supersedes chains.
+
+For non-replacing cross-references, use `**Related:** <entry-id>, <entry-id>` instead.
+
 ## Entry quality bar
 
 - Lead with the fact/rule/decision, not the story

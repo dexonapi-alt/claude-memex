@@ -8,6 +8,7 @@ import { draft } from "./commands/draft";
 import { ask } from "./commands/ask";
 import { stale } from "./commands/stale";
 import { check } from "./commands/check";
+import { graph } from "./commands/graph";
 
 const VERSION = "0.2.0";
 
@@ -34,9 +35,12 @@ Claude-powered commands:
 
 Automation:
   stale [--days N] [--brief]       List stale entries (used by SessionStart hook)
-  check [--base <ref>] [--patterns <glob,glob>] [--strict]
-                                   CI: fail if sensitive files changed without
-                                   a knowledge update
+  check [--base <ref>|--staged] [--patterns <glob,glob>] [--strict]
+                                   CI / pre-commit: fail if sensitive files
+                                   changed without a knowledge update
+  graph [--mermaid]                Show supersedes/related relationships
+                                   between entries (ASCII by default, Mermaid
+                                   with --mermaid for GitHub rendering)
 
 Misc:
   help                             Show this message
@@ -91,6 +95,9 @@ async function main(): Promise<void> {
       break;
     case "check":
       await check(rest);
+      break;
+    case "graph":
+      await graph(rest);
       break;
     case "version":
     case "--version":

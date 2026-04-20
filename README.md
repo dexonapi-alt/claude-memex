@@ -68,14 +68,64 @@ Open `.claude/knowledge/decisions.md`, fill in the details, and commit. Next tim
 
 ## 🧰 Commands
 
+**Core**
+
 | Command | What it does |
 |---|---|
-| `claude-memex init` | Set up `.claude/knowledge/`, the skill, and the hook |
+| `claude-memex init` | Set up `.claude/knowledge/`, the skill, and the hooks |
 | `claude-memex add <scope> "<title>"` | Append a new entry to a scope |
 | `claude-memex list [scope]` | Show what's in your knowledge base |
 | `claude-memex search <query>` | Grep across all entries |
 | `claude-memex validate` | Check everything is in order |
 | `claude-memex prune [--days N]` | Flag old entries (default: >180 days) |
+
+**Claude-powered (requires Claude Code CLI on PATH)**
+
+| Command | What it does |
+|---|---|
+| `claude-memex draft [--staged\|--working\|--commit <sha>] [--write]` | Ask Claude to propose knowledge entries from a git diff |
+| `claude-memex ask "<question>"` | Ask Claude a question answered strictly from your knowledge base |
+
+**Automation**
+
+| Command | What it does |
+|---|---|
+| `claude-memex stale [--days N] [--brief]` | List stale entries (powers the SessionStart hook) |
+| `claude-memex check [--base <ref>] [--patterns <glob,glob>] [--strict]` | CI check: fail if sensitive files changed without a knowledge update |
+
+## 🤖 Automation, explained
+
+Memory that relies on discipline is memory that decays. `claude-memex` closes the gap four different ways — so you never have to remember to maintain it:
+
+### `draft` — propose entries from a diff
+```bash
+# From your last commit
+npx claude-memex draft
+
+# From staged changes, and write the proposed entries into the files
+npx claude-memex draft --staged --write
+```
+Reads the diff, asks Claude to identify anything worth recording (new decisions, patterns, gotchas), and either prints the proposals or appends them directly to the right scope file. Turns *"I should remember this"* into a one-command reflex.
+
+### `ask` — semantic search without embeddings
+```bash
+npx claude-memex ask "why did we pick SQLite locally?"
+```
+Loads every `.md` in `.claude/knowledge/` and asks Claude — scoped strictly to the knowledge base, with source citations. No vector DB, no index to maintain. Claude does the semantic matching.
+
+### SessionStart hook — stale-check on every session
+Registered automatically by `init`. On every Claude Code session start, prints one line flagging entries older than 180 days:
+```
+[claude-memex] 3 knowledge entries older than 180 days — review for staleness: decisions.md:"Chose SQLite...", gotchas.md:"..."
+```
+Quiet when nothing is stale. Gives you a nudge, not a wall of text.
+
+### `check` — CI-style validation
+```bash
+# In GitHub Actions or pre-push hook:
+npx claude-memex check --base origin/main...HEAD --strict
+```
+Fails the check when someone lands a migration / auth / schema / config change without updating the knowledge base. Pattern list is overridable via `--patterns`. Exits `1` when `--strict` is set or when `CI=true`.
 
 ## 🗂 Scopes
 
@@ -132,6 +182,8 @@ Otherwise: this probably pays for itself within the first week.
 
 - **Node.js** 18 or newer
 - **Claude Code** — [install it here](https://claude.com/claude-code)
+- `draft` and `ask` require the `claude` CLI on your `PATH` (or set `CLAUDE_MEMEX_CLAUDE_BIN`)
+- `check` requires `git` and is intended to run inside a git repo (including CI)
 
 ## 🤝 Contributing
 

@@ -4,23 +4,40 @@ import { list } from "./commands/list";
 import { search } from "./commands/search";
 import { validate } from "./commands/validate";
 import { prune } from "./commands/prune";
+import { draft } from "./commands/draft";
+import { ask } from "./commands/ask";
+import { stale } from "./commands/stale";
+import { check } from "./commands/check";
 
-const VERSION = "0.1.0";
+const VERSION = "0.2.0";
 
 const HELP = `claude-memex ${VERSION} — in-repo knowledge base for Claude Code
 
 Usage:
   claude-memex <command> [args]
 
-Commands:
-  init [--force]               Scaffold .claude/knowledge/ + skill + hook
-  add <scope> "<title>"        Append a new entry to a scope
-  list [scope]                 List entries (optionally one scope)
-  search <query>               Grep across all knowledge files
-  validate                     Check knowledge base integrity
-  prune [--days N]             Flag entries untouched for N days (default 180)
-  help                         Show this message
-  version                      Print version
+Core commands:
+  init [--force]                   Scaffold .claude/knowledge/ + skill + hooks
+  add <scope> "<title>"            Append a new entry to a scope
+  list [scope]                     List entries (optionally one scope)
+  search <query>                   Grep across all knowledge files
+  validate                         Check knowledge base integrity
+  prune [--days N]                 Flag entries untouched for N days (default 180)
+
+Claude-powered commands:
+  draft [--staged|--working|--commit <sha>] [--write]
+                                   Propose knowledge entries from a git diff
+  ask "<question>"                 Answer a question using the knowledge base
+
+Automation:
+  stale [--days N] [--brief]       List stale entries (used by SessionStart hook)
+  check [--base <ref>] [--patterns <glob,glob>] [--strict]
+                                   CI: fail if sensitive files changed without
+                                   a knowledge update
+
+Misc:
+  help                             Show this message
+  version                          Print version
 
 Scopes:
   architecture, decisions, patterns, gotchas, glossary
@@ -28,8 +45,13 @@ Scopes:
 Examples:
   claude-memex init
   claude-memex add decisions "chose SQLite over Postgres for local dev"
-  claude-memex list patterns
-  claude-memex search "auth"
+  claude-memex draft --staged --write
+  claude-memex ask "why did we pick SQLite locally?"
+  claude-memex check --base origin/main...HEAD --strict
+
+Environment:
+  CLAUDE_MEMEX_CLAUDE_BIN          Path to the claude binary (default: claude
+                                   on *nix, claude.cmd on Windows)
 `;
 
 async function main(): Promise<void> {
@@ -53,6 +75,19 @@ async function main(): Promise<void> {
       break;
     case "prune":
       await prune(rest);
+      break;
+    case "draft":
+      await draft(rest);
+      break;
+    case "ask":
+      await ask(rest);
+      break;
+    case "stale":
+    case "stale-check":
+      await stale(rest);
+      break;
+    case "check":
+      await check(rest);
       break;
     case "version":
     case "--version":

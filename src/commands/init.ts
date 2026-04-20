@@ -17,16 +17,20 @@ interface HookEntry {
 interface Settings {
   hooks?: {
     PostToolUse?: HookEntry[];
+    SessionStart?: HookEntry[];
     [k: string]: unknown;
   };
   [k: string]: unknown;
 }
 
-const HOOK_ID = "claude-memex-knowledge-update";
+const POST_EDIT_HOOK_ID = "claude-memex-knowledge-update";
 
-const HOOK_COMMAND =
-  "node -e \"console.log('[knowledge-update] " + HOOK_ID +
+const POST_EDIT_COMMAND =
+  "node -e \"console.log('[knowledge-update] " +
+  POST_EDIT_HOOK_ID +
   ": consider updating .claude/knowledge/ if this change introduces a decision, pattern, or gotcha.')\"";
+
+const SESSION_START_COMMAND = "npx --no-install claude-memex stale --brief";
 
 export async function init(args: string[]): Promise<void> {
   const force = args.includes("--force");
@@ -51,12 +55,14 @@ export async function init(args: string[]): Promise<void> {
   copyDir(path.join(templates, "knowledge"), knowledgeDir());
   copyDir(path.join(templates, "skills", "knowledge-update"), skillDir());
 
-  mergeHook();
+  mergeHooks();
 
   console.log("Initialized claude-memex:");
-  console.log("  .claude/knowledge/       scaffolded");
+  console.log("  .claude/knowledge/                scaffolded");
   console.log("  .claude/skills/knowledge-update/  installed");
-  console.log("  .claude/settings.json    post-edit hook registered");
+  console.log("  .claude/settings.json             hooks registered:");
+  console.log("    - PostToolUse  (knowledge-update reminder)");
+  console.log("    - SessionStart (stale-entry flag)");
   console.log("");
   console.log("Next:");
   console.log("  1. git add .claude/ && commit");
@@ -64,22 +70,35 @@ export async function init(args: string[]): Promise<void> {
   console.log('  3. Try: claude-memex add decisions "your first decision"');
 }
 
-function mergeHook(): void {
+function mergeHooks(): void {
   const p = settingsPath();
   const existing = readJson<Settings>(p) ?? {};
   existing.hooks ??= {};
+
+  // PostToolUse — knowledge-update reminder after edits
   existing.hooks.PostToolUse ??= [];
+  if (
+    !existing.hooks.PostToolUse.some((h) =>
+      JSON.stringify(h).includes(POST_EDIT_HOOK_ID)
+    )
+  ) {
+    existing.hooks.PostToolUse.push({
+      matcher: "Edit|Write|MultiEdit",
+      hooks: [{ type: "command", command: POST_EDIT_COMMAND }],
+    });
+  }
 
-  const already = existing.hooks.PostToolUse.some((h) =>
-    JSON.stringify(h).includes(HOOK_ID)
-  );
-  if (already) return;
-
-  const entry: HookEntry = {
-    matcher: "Edit|Write|MultiEdit",
-    hooks: [{ type: "command", command: HOOK_COMMAND }],
-  };
-  existing.hooks.PostToolUse.push(entry);
+  // SessionStart — flag stale entries at session start
+  existing.hooks.SessionStart ??= [];
+  if (
+    !existing.hooks.SessionStart.some((h) =>
+      JSON.stringify(h).includes("claude-memex stale")
+    )
+  ) {
+    existing.hooks.SessionStart.push({
+      hooks: [{ type: "command", command: SESSION_START_COMMAND }],
+    });
+  }
 
   writeJson(p, existing);
 }

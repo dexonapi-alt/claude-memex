@@ -1,8 +1,8 @@
 blank_issues_enabled: false
 contact_links:
   - name: Documentation & README
-    url: https://github.com/dexonapi-alt/claude-memex#readme
+    url: https://github.com/dexonapi-alt/memex-md#readme
     about: Most usage questions are answered in the README. Please check first.
   - name: Contributing guide
-    url: https://github.com/dexonapi-alt/claude-memex/blob/main/CONTRIBUTING.md
+    url: https://github.com/dexonapi-alt/memex-md/blob/main/CONTRIBUTING.md
     about: Setup, PR workflow, translation workflow, and bug-report checklist.

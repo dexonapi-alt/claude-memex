@@ -47,7 +47,7 @@ The "team discipline" release. Project was renamed from `claude-memex` to `memex
 - Scaffolded `.claude/knowledge/` + `knowledge-update` skill + post-edit hook.
 - Zero runtime dependencies.
 
-[Unreleased]: https://github.com/dexonapi-alt/claude-memex/compare/v0.3.0...HEAD
-[0.3.0]: https://github.com/dexonapi-alt/claude-memex/releases/tag/v0.3.0
-[0.2.0]: https://github.com/dexonapi-alt/claude-memex/releases/tag/v0.2.0
-[0.1.0]: https://github.com/dexonapi-alt/claude-memex/releases/tag/v0.1.0
+[Unreleased]: https://github.com/dexonapi-alt/memex-md/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/dexonapi-alt/memex-md/releases/tag/v0.3.0
+[0.2.0]: https://github.com/dexonapi-alt/memex-md/releases/tag/v0.2.0
+[0.1.0]: https://github.com/dexonapi-alt/memex-md/releases/tag/v0.1.0

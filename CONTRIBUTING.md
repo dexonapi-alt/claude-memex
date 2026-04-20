@@ -5,7 +5,7 @@ Thanks for your interest in contributing. This project is a small, focused CLI â
 ## Getting started
 
 ```bash
-git clone https://github.com/dexonapi-alt/claude-memex.git
+git clone https://github.com/dexonapi-alt/memex-md.git
 cd memex-md
 npm install
 npm run build
@@ -49,7 +49,7 @@ When the English README changes, translations drift. It's fine to land an Englis
 
 ## Reporting bugs
 
-Open an issue at https://github.com/dexonapi-alt/claude-memex/issues with:
+Open an issue at https://github.com/dexonapi-alt/memex-md/issues with:
 
 - `node --version`
 - `claude --version`

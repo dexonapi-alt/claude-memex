@@ -1,0 +1,44 @@
+{
+  "name": "claude-memex",
+  "version": "0.1.0",
+  "description": "In-repo, self-updating knowledge base for Claude Code projects. Inspired by Vannevar Bush's memex. Scaffolds .claude/knowledge/, installs a knowledge-update skill, and wires a post-edit hook so your project's architecture, decisions, patterns, gotchas, and glossary live in git and stay fresh.",
+  "bin": {
+    "claude-memex": "bin/claude-memex.js"
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "bin",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc && node scripts/copy-templates.js",
+    "prepublishOnly": "npm run build",
+    "test": "node --test dist/test/**/*.test.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "claude",
+    "claude-code",
+    "knowledge-base",
+    "agent",
+    "llm",
+    "context",
+    "memory",
+    "ai"
+  ],
+  "author": "",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "typescript": "^5.4.0"
+  }
+}

@@ -10,6 +10,7 @@
 
 ### 🛠 Built with
 
+[![CI](https://github.com/dexonapi-alt/claude-memex/actions/workflows/ci.yml/badge.svg)](https://github.com/dexonapi-alt/claude-memex/actions/workflows/ci.yml)
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)
 ![Node.js](https://img.shields.io/badge/Node.js-%E2%89%A518-339933?style=flat-square&logo=node.js&logoColor=white)
 ![npm](https://img.shields.io/badge/npm-CB3837?style=flat-square&logo=npm&logoColor=white)

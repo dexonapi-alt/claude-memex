@@ -20,7 +20,26 @@
 
 ---
 
-## 🤔 The problem
+## ✍️ What you'll actually type
+
+memex-md is **four slash commands** inside Claude Code. That's the whole daily interface.
+
+| You type | memex-md does |
+|---|---|
+| `/memex:preference "we use Conventional Commits"` | Saves it to `CLAUDE.md` so every future Claude session loads it. |
+| `/memex:fix "users logged out after 15 min"` | Reads your git diff, drafts a structured `gotchas.md` entry (symptom / root cause / fix / prevention), saves it. |
+| `/memex:plan "add rate limiting to /api/auth/*"` | Reads your knowledge base, scans the repo, writes a full design plan to `.claude/plans/<date>-<slug>.md`. |
+| `/memex:apply-plan <slug>` | Executes that plan step-by-step, captures any new learnings back into the knowledge base on the way out. |
+
+### Why slash commands instead of asking Claude normally?
+
+Because *normally* is the problem. *Normally* Claude saves the fix to its local auto-memory that no teammate ever sees. *Normally* you re-explain the project every Monday. *Normally* the plan lives in your head and dies with the branch.
+
+`/memex:` is a **contract**: everything under this namespace lands in git, is reviewable in PRs, is shared with teammates, and is re-read by Claude at the start of every session.
+
+Four keystrokes of discipline instead of 400 words of reminders — and the discipline is enforced by the tool, not by you remembering.
+
+## 🤔 The problem it solves
 
 Every time you start a new Claude Code session, Claude forgets most of what it learned before. You end up re-explaining the same things:
 
@@ -30,9 +49,9 @@ Every time you start a new Claude Code session, Claude forgets most of what it l
 
 Claude **does** have a memory feature — but it's stored in your home folder (`~/.claude/...`). It doesn't travel with the repo. Teammates, other machines, and CI all start cold.
 
-## ✨ The fix
+## ✨ What memex-md installs
 
-`memex-md` gives your repo its own memory. One command sets up a folder where Claude writes down what it learns — and reads back at the start of every session:
+One command sets up a complete knowledge layer inside your repo:
 
 ```bash
 npx memex-md init
@@ -42,23 +61,28 @@ That creates:
 
 ```
 .claude/
-  knowledge/
+  knowledge/                       ← team-shared institutional memory
+    INDEX.md
     architecture.md     ← what the project looks like
     decisions.md        ← why we chose X over Y
     patterns.md         ← code patterns we reuse
     gotchas.md          ← footguns, past bugs
     glossary.md         ← our jargon
-  skills/
-    knowledge-update/   ← tells Claude when to update the above
-  settings.json         ← a gentle reminder hook after edits
-CLAUDE.md               ← auto-bootstrapped with a block that points
-                          Claude at .claude/knowledge/ every session
+  plans/                           ← design artifacts before implementation
+    INDEX.md
+  commands/memex/                  ← the 4 slash commands above
+    preference.md
+    fix.md
+    plan.md
+    apply-plan.md
+  skills/knowledge-update/         ← tells Claude when to update the KB
+  hooks/pre-commit                 ← gentle reminder on sensitive file changes
+  settings.json                    ← PostToolUse + SessionStart hooks
+CLAUDE.md                          ← bootstrapped so Claude auto-loads the KB
+.github/PULL_REQUEST_TEMPLATE.md   ← PR checklist for knowledge updates
 ```
 
-Commit the folder and `CLAUDE.md`. Claude reads the knowledge base every session.
-
-<!-- 📸 DEMO GIF: terminal recording of `init` + a session using the knowledge. Drop at ./docs/demo.gif -->
-<!-- ![demo](./docs/demo.gif) -->
+Commit it. Claude reads the whole thing at every session start.
 
 ## 🚀 Quick start
 
@@ -67,44 +91,103 @@ Commit the folder and `CLAUDE.md`. Claude reads the knowledge base every session
 npm install --save-dev memex-md
 npx memex-md init
 
-# Commit the new .claude/ folder
-git add .claude && git commit -m "Add memex-md"
-
-# Add your first knowledge entry
-npx memex-md add decisions "chose SQLite over Postgres for local dev"
+# Commit the new files
+git add .claude/ .github/ CLAUDE.md
+git commit -m "Add memex-md"
 ```
 
-Open `.claude/knowledge/decisions.md`, fill in the details, and commit. Next time you start Claude, that decision is already in context.
+**Restart Claude Code** so slash commands load. Type `/memex:` — autocomplete shows all four commands. That's it. You're done with setup; everything else happens through slash commands during normal work.
 
-## 🧰 Commands
+Your first real use might look like:
 
-**Core**
+```
+You:  /memex:preference "we use Conventional Commits"
+You:  /memex:plan "migrate auth from JWT to session cookies"
+      (review the plan file Claude wrote to .claude/plans/)
+You:  /memex:apply-plan migrate-auth-from-jwt-to-session-cookies
+```
+
+## 📅 An example day with memex-md
+
+Monday morning, you open a repo you haven't touched in a month.
+
+**Without memex-md:** You spend 15 minutes re-explaining the architecture to Claude. It doesn't remember the SQLite decision, so it suggests Postgres. You mention the auth rewrite that never merged — Claude needs the full backstory. By the time you're actually coding, it's 10 AM.
+
+**With memex-md:** Claude loaded `.claude/knowledge/` at session start. It already knows the SQLite call, the auth rewrite, and the repo's testing patterns. You're coding by 9:05.
+
+You fix a bug: users get logged out after 15 minutes. The root cause turned out to be a Redis TTL mismatch, not the auth logic you first suspected.
+
+```
+You:  /memex:fix "users logged out after 15 min"
+```
+
+Claude reads your diff, drafts a gotcha with symptom / root cause / fix / prevention, saves it to `.claude/knowledge/gotchas.md`. Next time anyone on the team (or you, three months from now) hits *"users logged out after X minutes"*, that's the first thing they find.
+
+Later you pick up a bigger task: rate limiting.
+
+```
+You:  /memex:plan "add rate limiting to /api/auth/* endpoints"
+```
+
+Claude reads your knowledge base, greps for the existing auth middleware, and writes `.claude/plans/2026-04-20-add-rate-limiting.md`:
+
+- Affected files (middleware + four route handlers)
+- Dependencies (needs `express-rate-limit`)
+- Migrations (none)
+- Risks (affects login — test with real load)
+- Implementation order (5 steps)
+
+You review the plan, tweak step 3, commit the plan file.
+
+```
+You:  /memex:apply-plan 2026-04-20-add-rate-limiting
+```
+
+Claude walks the steps. After step 3 it hits a quirk: the existing auth middleware sets `user.id` only *after* the JWT is validated, which is *after* the rate limiter runs. That's worth recording. On completion, the plan's `Status:` is flipped to `implemented (2026-04-20)` and there's a new entry in `gotchas.md` about the JWT timing.
+
+You `git diff`, review both code changes and KB entries, commit, push. Your teammate clones tomorrow and picks up with the same context — same decisions, same patterns, same gotchas. No catch-up meeting.
+
+## 🧰 Under the hood — the CLI
+
+The slash commands cover the daily interface. The `memex-md` CLI backs them and exposes a few extra power-user tools for scripting, CI, and one-off maintenance.
+
+**Setup**
 
 | Command | What it does |
 |---|---|
-| `memex-md init [--auto]` | Set up `.claude/knowledge/`, skill, hooks, CLAUDE.md. `--auto` also registers a Stop hook for auto-drafting after each Claude response |
-| `memex-md add <scope> "<title>"` | Append a new entry to a scope |
-| `memex-md list [scope]` | Show what's in your knowledge base |
-| `memex-md search <query>` | Grep across all entries |
-| `memex-md validate` | Check everything is in order |
-| `memex-md prune [--days N]` | Flag old entries (default: >180 days) |
-| `memex-md preference "<text>"` | Append a project-level preference to CLAUDE.md's `## Preferences` section |
+| `memex-md init [--auto] [--force]` | Set up `.claude/` + `CLAUDE.md` + `.github/PULL_REQUEST_TEMPLATE.md`. `--auto` also registers a `Stop` hook for auto-drafting after each Claude response. `--force` refreshes templates over an existing install. |
 
-**Claude-powered (requires Claude Code CLI on PATH)**
+**Authored entries**
 
 | Command | What it does |
 |---|---|
-| `memex-md draft [--staged\|--working\|--commit <sha>] [--write]` | Ask Claude to propose knowledge entries from a git diff |
-| `memex-md ask [--scope <s,s>] "<question>"` | Ask Claude a question answered strictly from your knowledge base (`--scope` narrows which files are loaded) |
+| `memex-md preference "<text>"` | Append a project-level preference to CLAUDE.md's `## Preferences`. Powers `/memex:preference`. |
+| `memex-md add <scope> "<title>"` | Create an entry skeleton in a scope file (manual fill-in). |
 
-**Automation**
+**Query & audit**
 
 | Command | What it does |
 |---|---|
-| `memex-md stale [--days N] [--brief]` | List stale entries (powers the SessionStart hook) |
-| `memex-md check [--base <ref>\|--staged] [--patterns <glob,glob>] [--strict]` | CI / pre-commit check: fail if sensitive files changed without a knowledge update |
-| `memex-md graph [--mermaid]` | Show supersedes/related relationships between entries |
-| `memex-md promote [--list\|--dry-run\|--all]` | Migrate repo-level facts accidentally stored in machine memory into `.claude/knowledge/` |
+| `memex-md list [scope]` | Show entries per scope. |
+| `memex-md search <query>` | Grep across all knowledge files. |
+| `memex-md ask [--scope <s,s>] "<question>"` | Ask Claude a question answered strictly from the knowledge base, with source citations. |
+| `memex-md graph [--mermaid]` | Show supersedes / related relationships. ASCII tree or Mermaid diagram. |
+| `memex-md validate` | Structural check of the knowledge base. |
+| `memex-md stale [--days N] [--brief]` | List entries older than N days (default 180). Powers the `SessionStart` hook. |
+| `memex-md prune [--days N]` | Alias of `stale`. |
+
+**Claude-driven capture**
+
+| Command | What it does |
+|---|---|
+| `memex-md draft [--staged\|--working\|--commit <sha>] [--write] [--auto]` | Ask Claude to propose knowledge entries from a git diff. `--write` applies them; `--auto` is the non-fatal mode used by the `Stop` hook. |
+| `memex-md promote [--list\|--dry-run\|--all]` | Migrate repo-level facts already captured in Claude's machine memory into `.claude/knowledge/`. |
+
+**CI / enforcement**
+
+| Command | What it does |
+|---|---|
+| `memex-md check [--base <ref>\|--staged] [--patterns <glob,glob>] [--strict]` | Fail if sensitive files changed without a knowledge update. Use in GitHub Actions or as a pre-commit hook. |
 
 ## 🤖 Automation, explained
 
@@ -188,20 +271,21 @@ Entries can reference each other with two optional bullets:
 
 This gives you a lightweight intelligence layer without pulling in a graph DB: plain Markdown conventions, walked at query time.
 
-## 💬 Slash commands inside Claude Code
+## 🧭 The `/memex:` contract (how slash commands stay reliable)
 
-`init` scaffolds three commands under `.claude/commands/memex/` that map to memex-md actions. Anything prefixed with `/memex:` touches the repo (knowledge base, plans, preferences) — never Claude's machine-local auto-memory.
+The four commands at the top of this README are more than shortcuts. They enforce three guarantees the tool cannot deliver any other way:
 
-| Slash command | What it does |
-|---|---|
-| `/memex:preference "<text>"` | Classifies the preference (project-level → CLAUDE.md, user-level → auto-memory) and saves. |
-| `/memex:fix "<description>"` | Reads the current git diff, drafts a `gotchas.md` entry with Symptom / Root cause / Fix / Prevention, appends to `.claude/knowledge/gotchas.md`, and reads it back. |
-| `/memex:plan "<task>"` | Reads the knowledge base, scans the codebase, writes a full design plan to `.claude/plans/<date>-<slug>.md` (Goal / Context / Affected files / Migrations / Hooks / Dependencies / Risks / Implementation order), and updates a plans index. |
-| `/memex:apply-plan <filename-or-slug>` | Executes a plan step by step: confirms first, walks through Implementation order, stops on failure, marks `Status: implemented` on success, captures any new learnings back into `.claude/knowledge/`. |
+### 1. Everything under `/memex:` lands in git
+Claude's default auto-memory (`~/.claude/...`) is per-user, per-machine, per-OS-install. Your teammate, your other laptop, and CI all start cold. Every `/memex:*` command writes to a file inside the repo (`CLAUDE.md`, `.claude/knowledge/*`, `.claude/plans/*`) — so the knowledge ships with the code.
 
-**Durability for teams:** these commands live in the repo (`.claude/commands/memex/*.md`), so every teammate who clones the repo gets the same shortcuts on first session.
+### 2. Claude re-reads fresh state after every command
+memex-md's `CLAUDE.md` block includes an explicit *re-read rule*: after any `/memex:*` slash command or `memex-md` CLI invocation, the disk state has changed, and Claude must re-read the affected `INDEX.md` + scope/plan file before its next substantive response. **The disk is the source of truth** — not what Claude remembers writing a moment ago.
 
-**Re-read rule:** after any `/memex:*` command runs, Claude is instructed (via the `CLAUDE.md` block) to re-read the updated `INDEX.md` and scope/plan file before its next substantive response. The disk is the source of truth, not what Claude remembers writing.
+### 3. Durability for teams
+Slash command templates live at `.claude/commands/memex/*.md` in your repo. Every teammate who clones gets the same four commands on their first Claude Code session. No shared config server, no per-user setup, no "did you install the extension?" — it's code, not configuration.
+
+### The routing rule
+memex-md's `CLAUDE.md` block also instructs Claude: **if the preference is about the user (shell habit, editor, timezone), it goes to auto-memory; if it's about the project (convention, decision, pattern, gotcha, domain term), it goes in git via memex-md.** The `/memex:preference` command applies this rule automatically. If you invoke it with a clearly-personal preference, Claude will flag it and offer to save to auto-memory instead.
 
 ## 🗂 Scopes
 

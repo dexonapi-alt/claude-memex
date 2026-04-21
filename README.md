@@ -22,9 +22,7 @@
 
 ## ✍️ What you'll actually type
 
-memex-md is **four slash commands** inside Claude Code. That's the whole daily interface.
-
-memex-md is **eight slash commands** inside Claude Code, split into capture (what you learned) and plans (what you're about to do).
+memex-md is **eight slash commands** inside Claude Code, split into **capture** (what you learned) and **plans** (what you're about to do). That's the whole daily interface.
 
 **Capture**
 
@@ -50,7 +48,7 @@ Because *normally* is the problem. *Normally* Claude saves the fix to its local 
 
 `/memex:` is a **contract**: everything under this namespace lands in git, is reviewable in PRs, is shared with teammates, and is re-read by Claude at the start of every session.
 
-Four keystrokes of discipline instead of 400 words of reminders — and the discipline is enforced by the tool, not by you remembering.
+A few keystrokes of discipline instead of 400 words of reminders — and the discipline is enforced by the tool, not by you remembering.
 
 ## 🤔 The problem it solves
 
@@ -83,11 +81,10 @@ That creates:
     glossary.md         ← our jargon
   plans/                           ← design artifacts before implementation
     INDEX.md
-  commands/memex/                  ← the 4 slash commands above
-    preference.md
-    fix.md
-    plan.md
-    apply-plan.md
+    applied/            ← plans that have been executed (git mv'd here)
+  commands/memex/                  ← the 8 slash commands above
+    preference.md  fix.md  decide.md  pattern.md
+    arch.md        term.md plan.md   apply-plan.md
   skills/knowledge-update/         ← tells Claude when to update the KB
   hooks/pre-commit                 ← gentle reminder on sensitive file changes
   settings.json                    ← PostToolUse + SessionStart hooks
@@ -109,15 +106,17 @@ git add .claude/ .github/ CLAUDE.md
 git commit -m "Add memex-md"
 ```
 
-**Restart Claude Code** so slash commands load. Type `/memex:` — autocomplete shows all four commands. That's it. You're done with setup; everything else happens through slash commands during normal work.
+**Restart Claude Code** so the slash commands load. Type `/memex:` — autocomplete shows all eight. That's it. You're done with setup; everything else happens through slash commands during normal work.
 
 Your first real use might look like:
 
 ```
 You:  /memex:preference "we use Conventional Commits"
+You:  /memex:decide "chose React Query over SWR for client cache"
 You:  /memex:plan "migrate auth from JWT to session cookies"
       (review the plan file Claude wrote to .claude/plans/)
 You:  /memex:apply-plan migrate-auth-from-jwt-to-session-cookies
+      (plan executed, then git mv'd to .claude/plans/applied/)
 ```
 
 ## 📅 An example day with memex-md
@@ -135,6 +134,14 @@ You:  /memex:fix "users logged out after 15 min"
 ```
 
 Claude reads your diff, drafts a gotcha with symptom / root cause / fix / prevention, saves it to `.claude/knowledge/gotchas.md`. Next time anyone on the team (or you, three months from now) hits *"users logged out after X minutes"*, that's the first thing they find.
+
+Mid-day, you notice the same data-fetch shape in three new routes. You name the pattern:
+
+```
+You:  /memex:pattern "server-component fetch with Suspense boundary"
+```
+
+Claude greps to confirm 3+ uses, writes the entry to `.claude/knowledge/patterns.md` with `Where used` / `Shape` / `When to use` / `When NOT to use`. Future teammates get the naming for free.
 
 Later you pick up a bigger task: rate limiting.
 
@@ -156,7 +163,12 @@ You review the plan, tweak step 3, commit the plan file.
 You:  /memex:apply-plan 2026-04-20-add-rate-limiting
 ```
 
-Claude walks the steps. After step 3 it hits a quirk: the existing auth middleware sets `user.id` only *after* the JWT is validated, which is *after* the rate limiter runs. That's worth recording. On completion, the plan's `Status:` is flipped to `implemented (2026-04-20)` and there's a new entry in `gotchas.md` about the JWT timing.
+Claude walks the steps. After step 3 it hits a quirk: the existing auth middleware sets `user.id` only *after* the JWT is validated, which is *after* the rate limiter runs. That's worth recording. On completion:
+
+- The plan's `Status:` is flipped to `implemented (2026-04-20)`.
+- A new entry in `gotchas.md` captures the JWT timing.
+- The plan is `git mv`'d to `.claude/plans/applied/2026-04-20-add-rate-limiting.md` — history preserved, active plans list stays short.
+- `.claude/plans/INDEX.md` moves the entry from `## Plans` to `## Applied`.
 
 You `git diff`, review both code changes and KB entries, commit, push. Your teammate clones tomorrow and picks up with the same context — same decisions, same patterns, same gotchas. No catch-up meeting.
 
@@ -204,7 +216,7 @@ The slash commands cover the daily interface. The `memex-md` CLI backs them and 
 
 ## 🤖 Automation, explained
 
-Memory that relies on discipline is memory that decays. `memex-md` closes the gap four different ways — so you never have to remember to maintain it:
+Memory that relies on discipline is memory that decays. `memex-md` closes the gap from several angles — so you never have to remember to maintain it:
 
 ### `draft` — propose entries from a diff
 ```bash
@@ -286,7 +298,7 @@ This gives you a lightweight intelligence layer without pulling in a graph DB: p
 
 ## 🧭 The `/memex:` contract (how slash commands stay reliable)
 
-The four commands at the top of this README are more than shortcuts. They enforce three guarantees the tool cannot deliver any other way:
+The eight commands at the top of this README are more than shortcuts. They enforce three guarantees the tool cannot deliver any other way:
 
 ### 1. Everything under `/memex:` lands in git
 Claude's default auto-memory (`~/.claude/...`) is per-user, per-machine, per-OS-install. Your teammate, your other laptop, and CI all start cold. Every `/memex:*` command writes to a file inside the repo (`CLAUDE.md`, `.claude/knowledge/*`, `.claude/plans/*`) — so the knowledge ships with the code.
@@ -295,7 +307,7 @@ Claude's default auto-memory (`~/.claude/...`) is per-user, per-machine, per-OS-
 memex-md's `CLAUDE.md` block includes an explicit *re-read rule*: after any `/memex:*` slash command or `memex-md` CLI invocation, the disk state has changed, and Claude must re-read the affected `INDEX.md` + scope/plan file before its next substantive response. **The disk is the source of truth** — not what Claude remembers writing a moment ago.
 
 ### 3. Durability for teams
-Slash command templates live at `.claude/commands/memex/*.md` in your repo. Every teammate who clones gets the same four commands on their first Claude Code session. No shared config server, no per-user setup, no "did you install the extension?" — it's code, not configuration.
+Slash command templates live at `.claude/commands/memex/*.md` in your repo. Every teammate who clones gets the same eight commands on their first Claude Code session. No shared config server, no per-user setup, no "did you install the extension?" — it's code, not configuration.
 
 ### The routing rule
 memex-md's `CLAUDE.md` block also instructs Claude: **if the preference is about the user (shell habit, editor, timezone), it goes to auto-memory; if it's about the project (convention, decision, pattern, gotcha, domain term), it goes in git via memex-md.** The `/memex:preference` command applies this rule automatically. If you invoke it with a clearly-personal preference, Claude will flag it and offer to save to auto-memory instead.

@@ -24,12 +24,25 @@
 
 memex-md is **four slash commands** inside Claude Code. That's the whole daily interface.
 
+memex-md is **eight slash commands** inside Claude Code, split into capture (what you learned) and plans (what you're about to do).
+
+**Capture**
+
 | You type | memex-md does |
 |---|---|
 | `/memex:preference "we use Conventional Commits"` | Saves it to `CLAUDE.md` so every future Claude session loads it. |
-| `/memex:fix "users logged out after 15 min"` | Reads your git diff, drafts a structured `gotchas.md` entry (symptom / root cause / fix / prevention), saves it. |
+| `/memex:fix "users logged out after 15 min"` | Reads your git diff, drafts a `gotchas.md` entry (symptom / root cause / fix / prevention). |
+| `/memex:decide "chose React Query over SWR"` | Writes a decision to `decisions.md` with context / why / trade-offs. |
+| `/memex:pattern "server-component fetch with Suspense"` | Grep-confirms 3+ uses, writes to `patterns.md` with where used / when NOT to use. |
+| `/memex:arch "Redis cache layer between API and Postgres"` | Writes to `architecture.md` with shape (diagram) / boundary. |
+| `/memex:term "POS: the in-store checkout flow"` | Writes to `glossary.md` (deduplicates, alphabetises). |
+
+**Plans**
+
+| You type | memex-md does |
+|---|---|
 | `/memex:plan "add rate limiting to /api/auth/*"` | Reads your knowledge base, scans the repo, writes a full design plan to `.claude/plans/<date>-<slug>.md`. |
-| `/memex:apply-plan <slug>` | Executes that plan step-by-step, captures any new learnings back into the knowledge base on the way out. |
+| `/memex:apply-plan <slug>` | Executes that plan step-by-step, captures new learnings into the KB, then `git mv`s the plan to `.claude/plans/applied/`. |
 
 ### Why slash commands instead of asking Claude normally?
 

@@ -55,7 +55,26 @@ Cite the plan in the entry's metadata: `- **Source:** plan `<filename>``.
 
 Do NOT manufacture entries for routine execution. *Zero entries is the correct output most of the time.*
 
-## Step 6 — Summarize to the user
+## Step 6 — Archive the plan
+
+Keep the active plans list short by moving completed plans to a sibling folder:
+
+1. Ensure `.claude/plans/applied/` exists (create with `mkdir -p .claude/plans/applied` via your Bash tool if needed).
+2. Move the plan with `git mv` to preserve history:
+
+       git mv .claude/plans/<filename> .claude/plans/applied/<filename>
+
+   If `git mv` fails because this is not a git repo, fall back to a regular `mv` and warn the user that history will not be preserved.
+
+3. Update `.claude/plans/INDEX.md`:
+   - Remove the entry from the `## Plans` (active) section.
+   - Add it under a `## Applied` section (create the heading if it doesn't exist) with the implementation date:
+
+         - [applied/<filename>](applied/<filename>) — <short description> *(implemented <YYYY-MM-DD>)*
+
+Read the INDEX back to confirm the move is reflected.
+
+## Step 7 — Summarize to the user
 
 Tell the user:
 
@@ -63,8 +82,9 @@ Tell the user:
 - Which verification step(s) confirm correctness (tests passing, build OK, manual check described).
 - Any knowledge-base entries added.
 - Any follow-ups deliberately left out of scope.
+- The plan's new location: `.claude/plans/applied/<filename>`.
 
-End with: *"Review the diff with `git diff` and commit when ready. Plan file updated to `Status: implemented`."*
+End with: *"Review the diff with `git diff` and commit when ready. Plan archived to `.claude/plans/applied/` with `Status: implemented`."*
 
 ## Rules
 

@@ -6,6 +6,22 @@ All notable changes to `memex-md` are documented here. This project follows [Sem
 
 Nothing yet.
 
+## [0.5.2] — 2026-04-20
+
+### Added
+
+- **Four new scope-specific slash commands** — symmetric with `/memex:fix`, each routes to a single scope file with a structured entry schema:
+  - `/memex:decide "<text>"` → `decisions.md` (Context / Decision / Why / Trade-offs / Supersedes / Related).
+  - `/memex:pattern "<text>"` → `patterns.md` (Grep confirms 3+ uses before recording; anti-pattern signals required).
+  - `/memex:arch "<text>"` → `architecture.md` (prefers diagram-as-text + boundary over prose).
+  - `/memex:term "<term>: <definition>"` → `glossary.md` (deduplicates against existing; maintains alphabetical order).
+- **Plan archiving on `/memex:apply-plan` completion** — after a plan's `Status` is updated to `implemented (<date>)`, the command now `git mv`s the plan to `.claude/plans/applied/<filename>` and moves the INDEX.md entry from `## Plans` to a `## Applied` section. Keeps the active plans list short while preserving full history via git rename tracking. Falls back to regular `mv` (with a user warning) if the repo isn't git-tracked.
+
+### Changed
+
+- `init` scaffolds 8 slash commands (was 4) and the plans `INDEX.md` seed now includes both `## Plans` and `## Applied` sections.
+- CLAUDE.md block's slash-command list is reorganized into **Capture** (6 commands) and **Plans** (2 commands) subsections.
+
 ## [0.5.1] — 2026-04-20
 
 ### Added
@@ -128,7 +144,8 @@ The "team discipline" release. Project was renamed from `claude-memex` to `memex
 - Scaffolded `.claude/knowledge/` + `knowledge-update` skill + post-edit hook.
 - Zero runtime dependencies.
 
-[Unreleased]: https://github.com/dexonapi-alt/memex-md/compare/v0.5.1...HEAD
+[Unreleased]: https://github.com/dexonapi-alt/memex-md/compare/v0.5.2...HEAD
+[0.5.2]: https://github.com/dexonapi-alt/memex-md/releases/tag/v0.5.2
 [0.5.1]: https://github.com/dexonapi-alt/memex-md/releases/tag/v0.5.1
 [0.5.0]: https://github.com/dexonapi-alt/memex-md/releases/tag/v0.5.0
 [0.4.0]: https://github.com/dexonapi-alt/memex-md/releases/tag/v0.4.0

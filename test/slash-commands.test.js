@@ -8,20 +8,54 @@ describe("init scaffolds slash commands + plans dir", () => {
   const dirs = [];
   after(() => dirs.forEach(cleanup));
 
-  test("installs /memex:preference, /memex:fix, /memex:plan, /memex:apply-plan", () => {
+  test("installs all 8 /memex:* slash commands", () => {
     const dir = makeTempRepo();
     dirs.push(dir);
     const r = runCli(["init"], dir);
     assert.equal(r.exitCode, 0, r.stderr);
 
     const cmdDir = path.join(dir, ".claude/commands/memex");
-    for (const name of ["preference.md", "fix.md", "plan.md", "apply-plan.md"]) {
+    const expected = [
+      "preference.md",
+      "fix.md",
+      "plan.md",
+      "apply-plan.md",
+      "decide.md",
+      "pattern.md",
+      "arch.md",
+      "term.md",
+    ];
+    for (const name of expected) {
       const p = path.join(cmdDir, name);
       assert.ok(fs.existsSync(p), `expected ${p} to exist`);
       const content = fs.readFileSync(p, "utf8");
       assert.match(content, /^---/m, `${name} should have frontmatter`);
       assert.match(content, /\$ARGUMENTS/, `${name} should reference $ARGUMENTS`);
     }
+  });
+
+  test("plans INDEX seed has both ## Plans and ## Applied sections", () => {
+    const dir = makeTempRepo();
+    dirs.push(dir);
+    runCli(["init"], dir);
+    const indexMd = fs.readFileSync(
+      path.join(dir, ".claude/plans/INDEX.md"),
+      "utf8"
+    );
+    assert.match(indexMd, /^## Plans$/m);
+    assert.match(indexMd, /^## Applied$/m);
+  });
+
+  test("apply-plan template describes the archiving step", () => {
+    const dir = makeTempRepo();
+    dirs.push(dir);
+    runCli(["init"], dir);
+    const applyPlan = fs.readFileSync(
+      path.join(dir, ".claude/commands/memex/apply-plan.md"),
+      "utf8"
+    );
+    assert.match(applyPlan, /git mv \.claude\/plans\//);
+    assert.match(applyPlan, /plans\/applied\//);
   });
 
   test("scaffolds .claude/plans/INDEX.md", () => {
